@@ -258,11 +258,6 @@ class BrowserSession:
     Open it once per polling run and reuse it across every watched trip.
     """
 
-    def __init__(self) -> None:
-        self._pw = None
-        self._browser = None
-        self._page = None
-
     # JS run inside the page. A hard timeout matters because an unauthorised
     # request to this endpoint hangs rather than erroring.
     _FETCH_JS = """
@@ -288,6 +283,34 @@ class BrowserSession:
         }
     }"""
 
+    def __init__(self, log=print) -> None:
+        self._pw = None
+        self._browser = None
+        self._page = None
+        self._ctx = None
+        self._log = log
+
+    def abck_state(self) -> str:
+        """Read Akamai's verdict on this session from its _abck cookie.
+
+        The cookie's value carries a segment that is `~-1~` while the sensor
+        has not cleared the session and `~0~` once it has. Checking it turns
+        "the request failed" into "we were never admitted in the first
+        place", which is the difference between a bug and a block.
+        """
+        try:
+            for c in self._ctx.cookies():
+                if c["name"] == "_abck":
+                    v = c["value"]
+                    if "~-1~" in v:
+                        return "not-cleared"
+                    if "~0~" in v:
+                        return "cleared"
+                    return "unknown"
+        except Exception:
+            pass
+        return "absent"
+
     def __enter__(self) -> "BrowserSession":
         from playwright.sync_api import sync_playwright
 
@@ -298,25 +321,67 @@ class BrowserSession:
                 "--no-sandbox",
             ]
         )
-        ctx = self._browser.new_context(
+        self._ctx = self._browser.new_context(
             user_agent=_headers()["User-Agent"],
             locale="en-US",
             timezone_id="America/New_York",
             viewport={"width": 1440, "height": 900},
         )
         # Chromium sets navigator.webdriver, which bot detection looks at.
-        ctx.add_init_script(
+        self._ctx.add_init_script(
             "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"
         )
-        self._page = ctx.new_page()
+        self._page = self._ctx.new_page()
         self._page.set_default_timeout(60000)
-        self._page.goto(
-            f"{BASE}/home.html", wait_until="domcontentloaded", timeout=60000
-        )
-        # Let Akamai's sensor script run and post, so the clearance cookies
-        # are in place before we ask for fares.
-        self._page.wait_for_timeout(8000)
+        self._warm_up()
         return self
+
+    def _warm_up(self) -> None:
+        """Earn Akamai's clearance cookies before asking for fares.
+
+        Loading the marketing homepage is not enough. The sensor script
+        scores real interaction, and the booking SPA is where it posts most
+        actively, so we visit both and move the mouse around in between,
+        then wait until _abck says we are cleared.
+        """
+        page = self._page
+        page.goto(f"{BASE}/home.html", wait_until="domcontentloaded", timeout=60000)
+        page.wait_for_timeout(3000)
+
+        # Some organic-looking input for the sensor to score.
+        for x, y in ((420, 330), (700, 480), (980, 300), (640, 620)):
+            try:
+                page.mouse.move(x, y, steps=12)
+                page.wait_for_timeout(250)
+            except Exception:
+                pass
+        try:
+            page.mouse.wheel(0, 500)
+            page.wait_for_timeout(600)
+            page.mouse.wheel(0, -260)
+        except Exception:
+            pass
+
+        # The booking SPA, which is the page the real fare request comes from.
+        try:
+            page.goto(f"{BASE}/tickets/departure.html",
+                      wait_until="domcontentloaded", timeout=60000)
+        except Exception:
+            pass
+        page.wait_for_timeout(4000)
+
+        # Wait for the sensor to actually clear us, rather than guessing.
+        for attempt in range(6):
+            state = self.abck_state()
+            self._log(f"  akamai clearance: {state}")
+            if state == "cleared":
+                return
+            page.wait_for_timeout(3000)
+            try:
+                page.mouse.move(500 + attempt * 40, 400, steps=8)
+            except Exception:
+                pass
+        self._log("  proceeding without confirmed clearance")
 
     def __exit__(self, *exc) -> None:
         try:
@@ -331,7 +396,7 @@ class BrowserSession:
             pass
 
     def fetch(self, origin: str, destination: str, date: str,
-              passengers: int = 1, attempts: int = 2) -> list[TrainOption]:
+              passengers: int = 1, attempts: int = 3) -> list[TrainOption]:
         last_error = "no attempt made"
         for attempt in range(attempts):
             result = self._page.evaluate(
@@ -340,7 +405,7 @@ class BrowserSession:
                     "endpoint": ENDPOINT,
                     "payload": _payload(origin, destination, date, passengers),
                     "traceId": _trace_id(),
-                    "timeoutMs": 25000,
+                    "timeoutMs": 45000,
                 },
             )
             if result["status"] == 200:
@@ -352,13 +417,21 @@ class BrowserSession:
                     )
                 return parse(parsed)
 
-            last_error = result.get("error") or f"HTTP {result['status']}"
+            status = result["status"]
+            last_error = result.get("error") or f"HTTP {status}"
+            # A 403 with an Akamai reference is a block, not a hiccup. Say so
+            # rather than burning retries on it.
+            body_head = (result.get("body") or "")[:200].replace("\n", " ")
+            self._log(
+                f"    attempt {attempt + 1}/{attempts}: {last_error} "
+                f"(clearance: {self.abck_state()})"
+                + (f" body: {body_head}" if body_head else "")
+            )
+
             if attempt + 1 < attempts:
-                # Usually means the sensor had not finished. Reload and wait.
-                self._page.wait_for_timeout(5000)
+                self._page.wait_for_timeout(4000)
                 try:
-                    self._page.reload(wait_until="domcontentloaded")
-                    self._page.wait_for_timeout(6000)
+                    self._warm_up()
                 except Exception:
                     pass
 
@@ -389,7 +462,7 @@ def fetch_many(trips: Iterable[tuple[str, str, str, int]],
     else:
         try:
             log("  warming up browser session...")
-            with BrowserSession() as session:
+            with BrowserSession(log=log) as session:
                 log("  session ready")
                 for trip in trips:
                     label = f"{trip[0]}->{trip[1]} {trip[2]}"
