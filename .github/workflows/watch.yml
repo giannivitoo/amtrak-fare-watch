@@ -22,16 +22,22 @@ concurrency:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    # Ships with Chromium already installed, so the browser tier costs no
-    # install time.
-    container:
-      image: mcr.microsoft.com/playwright/python:v1.49.0-noble
 
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install dependencies
         run: pip install --no-cache-dir -r requirements.txt
+
+      # Installs the Chromium build matching the pinned Playwright version,
+      # plus the system libraries it needs. The runner image is fresh each
+      # run, so the system deps have to be installed every time.
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
 
       - name: Poll fares
         env:
@@ -40,6 +46,8 @@ jobs:
         run: python -m watcher.main
 
       - name: Commit price history
+        # Runs even when polling failed, so a partial result is still saved.
+        if: always()
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "fare-watch"
