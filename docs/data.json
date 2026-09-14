@@ -1,4 +1,35 @@
 {
-  "generated_at": null,
-  "watches": []
+  "generated_at": "2026-09-14T17:11:59.101629+00:00",
+  "watches": [
+    {
+      "id": "nyp-was-2026-10-05",
+      "from": "NYP",
+      "to": "WAS",
+      "date": "2026-10-05",
+      "target_price": 50,
+      "current": null,
+      "current_label": null,
+      "checked_at": null,
+      "low": null,
+      "high": null,
+      "checks": 0,
+      "series": [],
+      "booking_url": "https://www.amtrak.com/tickets/departure.html?ori=NYP&des=WAS&dt=10/05/2026&adt=1&type=OW"
+    },
+    {
+      "id": "nyp-bos-2026-10-17",
+      "from": "NYP",
+      "to": "BOS",
+      "date": "2026-10-17",
+      "target_price": 60,
+      "current": null,
+      "current_label": null,
+      "checked_at": null,
+      "low": null,
+      "high": null,
+      "checks": 0,
+      "series": [],
+      "booking_url": "https://www.amtrak.com/tickets/departure.html?ori=NYP&des=BOS&dt=10/17/2026&adt=1&type=OW"
+    }
+  ]
 }
