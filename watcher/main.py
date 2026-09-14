@@ -217,6 +217,13 @@ def run() -> int:
     if polled:
         store.mark_polled(polled)
     rebuild_dashboard(active)
+
+    # A run where every due trip failed must not report success. Otherwise a
+    # broken fetch looks identical to a quiet market: all green, no alerts,
+    # and nothing to tell you the watcher stopped seeing prices.
+    if due and not polled:
+        log(f"FAILED: all {len(due)} due trip(s) returned no data.")
+        return 1
     return 0
 
 
