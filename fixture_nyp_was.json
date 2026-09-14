@@ -1,0 +1,109 @@
+{
+  "success": true,
+  "errors": [],
+  "data": {
+    "journeySolutionOption": {
+      "journeyLegs": [
+        {
+          "journeyLegOptions": [
+            {
+              "id": "1_2026-10-05T04:50:00_ce2bc647",
+              "isCancelled": false,
+              "elapsedSeconds": 13260,
+              "origin": {"code": "NYP", "name": "New York, NY", "schedule": {"departureDateTime": "2026-10-05T04:50:00"}},
+              "destination": {"code": "WAS", "name": "Washington, DC", "schedule": {"arrivalDateTime": "2026-10-05T08:31:00"}},
+              "travelLegs": [{"travelService": {"name": "Northeast Regional", "number": "111", "type": "TRAIN", "isAcela": false}}],
+              "reservableAccommodations": [
+                {"category": "RG", "travelClass": "Coach", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"accommodation": "0.00", "rail": "82.00", "total": "82.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 52, "name": "Coach Seat", "rbd": "YE"}}]},
+                {"category": "RG", "travelClass": "Coach", "fareFamily": "FLX",
+                 "accommodationFare": {"dollarsAmount": {"accommodation": "0.00", "rail": "91.00", "total": "91.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 52, "name": "Coach Seat", "rbd": "YE"}}]},
+                {"category": "RG", "travelClass": "Business", "fareFamily": "NA",
+                 "accommodationFare": {"dollarsAmount": {"accommodation": "0.00", "rail": "155.00", "total": "155.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 10, "name": "Business Class Seat", "rbd": "JE"}}]}
+              ],
+              "nonReservableAccommodations": [
+                {"category": "RG", "travelClass": "Coach", "fareFamily": "SAL", "message": "NOT AVAILABLE"}
+              ]
+            },
+            {
+              "id": "1_2026-10-05T05:45:00_aa11",
+              "isCancelled": false,
+              "elapsedSeconds": 12060,
+              "origin": {"code": "NYP", "name": "New York, NY", "schedule": {"departureDateTime": "2026-10-05T05:45:00"}},
+              "destination": {"code": "WAS", "name": "Washington, DC", "schedule": {"arrivalDateTime": "2026-10-05T09:06:00"}},
+              "travelLegs": [{"travelService": {"name": "Northeast Regional", "number": "181", "type": "TRAIN", "isAcela": false}}],
+              "reservableAccommodations": [
+                {"travelClass": "Coach", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"total": "45.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 38}}]},
+                {"travelClass": "Coach", "fareFamily": "FLX",
+                 "accommodationFare": {"dollarsAmount": {"total": "50.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 38}}]},
+                {"travelClass": "Business", "fareFamily": "NA",
+                 "accommodationFare": {"dollarsAmount": {"total": "132.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 3}}]}
+              ]
+            },
+            {
+              "id": "1_2026-10-05T06:10:00_bb22",
+              "isCancelled": false,
+              "elapsedSeconds": 10740,
+              "origin": {"code": "NYP", "name": "New York, NY", "schedule": {"departureDateTime": "2026-10-05T06:10:00"}},
+              "destination": {"code": "WAS", "name": "Washington, DC", "schedule": {"arrivalDateTime": "2026-10-05T09:09:00"}},
+              "travelLegs": [{"travelService": {"name": "Acela", "number": "2103", "type": "TRAIN", "isAcela": true}}],
+              "reservableAccommodations": [
+                {"travelClass": "Business", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"total": "139.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 98}}]},
+                {"travelClass": "First", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"total": "291.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 10}}]},
+                {"travelClass": "Business", "fareFamily": "FLX",
+                 "accommodationFare": {"dollarsAmount": {"total": "158.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 98}}]},
+                {"travelClass": "First", "fareFamily": "FLX",
+                 "accommodationFare": {"dollarsAmount": {"total": "332.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 10}}]}
+              ]
+            },
+            {
+              "id": "1_2026-10-05T06:32:00_cc33",
+              "isCancelled": false,
+              "elapsedSeconds": 12900,
+              "origin": {"code": "NYP", "name": "New York, NY", "schedule": {"departureDateTime": "2026-10-05T06:32:00"}},
+              "destination": {"code": "WAS", "name": "Washington, DC", "schedule": {"arrivalDateTime": "2026-10-05T10:07:00"}},
+              "travelLegs": [{"travelService": {"name": "Northeast Regional", "number": "113", "type": "TRAIN", "isAcela": false}}],
+              "reservableAccommodations": [
+                {"travelClass": "Coach", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"total": "20.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 3}}]},
+                {"travelClass": "Coach", "fareFamily": "FLX",
+                 "accommodationFare": {"dollarsAmount": {"total": "22.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 3}}]},
+                {"travelClass": "Business", "fareFamily": "NA",
+                 "accommodationFare": {"dollarsAmount": {"total": "220.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 51}}]}
+              ]
+            },
+            {
+              "id": "1_2026-10-05T23:00:00_dd44",
+              "isCancelled": true,
+              "elapsedSeconds": 13000,
+              "origin": {"code": "NYP", "schedule": {"departureDateTime": "2026-10-05T23:00:00"}},
+              "destination": {"code": "WAS", "schedule": {"arrivalDateTime": "2026-10-06T02:36:00"}},
+              "travelLegs": [{"travelService": {"name": "Northeast Regional", "number": "199", "isAcela": false}}],
+              "reservableAccommodations": [
+                {"travelClass": "Coach", "fareFamily": "VLU",
+                 "accommodationFare": {"dollarsAmount": {"total": "12.00"}},
+                 "travelLegAccommodations": [{"reservableProduct": {"availableInventory": 40}}]}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

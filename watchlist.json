@@ -1,0 +1,37 @@
+{
+  "_comment": "Edit this file to change what gets watched. Commit it and the next run picks it up. Station codes: NYP New York Penn, WAS Washington Union, BOS Boston South, PHL Philadelphia 30th St, NWK Newark Penn, BAL Baltimore, PVD Providence, NHV New Haven.",
+
+  "defaults": {
+    "passengers": 1,
+    "classes": ["Coach"],
+    "alert_drop_pct": 15,
+    "alert_drop_abs": 20,
+    "cooldown_minutes": 180,
+    "cadence": [
+      { "within_hours": 48, "every_minutes": 15 },
+      { "within_hours": 336, "every_minutes": 60 },
+      { "within_hours": null, "every_minutes": 360 }
+    ]
+  },
+
+  "watches": [
+    {
+      "id": "nyp-was-2026-10-05",
+      "from": "NYP",
+      "to": "WAS",
+      "date": "2026-10-05",
+      "target_price": 50,
+      "depart_after": "06:00",
+      "depart_before": "20:00"
+    },
+    {
+      "id": "nyp-bos-2026-10-17",
+      "from": "NYP",
+      "to": "BOS",
+      "date": "2026-10-17",
+      "target_price": 60,
+      "depart_after": "06:00",
+      "depart_before": "20:00"
+    }
+  ]
+}

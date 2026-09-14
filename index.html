@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amtrak Fare Watch</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --axis:           #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --good:           #006300;
+    --critical:       #d03b3b;
+    --target:         #898781;
+    /* The tooltip sits on top of the chart surface, so it gets an inverted
+       panel. Matching the card surface would make it invisible. */
+    --tip-bg:         #0b0b0b;
+    --tip-fg:         #ffffff;
+    --tip-muted:      #c3c2b7;
+    --crosshair:      #898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --axis:           #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --good:           #0ca30c;
+      --critical:       #d03b3b;
+      --tip-bg:         #fcfcfb;
+      --tip-fg:         #0b0b0b;
+      --tip-muted:      #52514e;
+      --crosshair:      #898781;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --axis:           #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+    --tip-bg:         #fcfcfb;
+    --tip-fg:         #0b0b0b;
+    --tip-muted:      #52514e;
+    --crosshair:      #898781;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding-block: 40px 64px;
+    padding-inline: 16px;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  header { margin-bottom: 28px; }
+  h1 { font-size: 22px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 13px; margin: 0; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card-head {
+    display: flex; flex-wrap: wrap; gap: 14px 24px;
+    align-items: baseline; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .route { font-size: 17px; font-weight: 640; margin: 0; letter-spacing: -0.01em; }
+  .when { color: var(--text-secondary); font-size: 13px; margin: 2px 0 0; }
+  .book {
+    color: var(--series-1); text-decoration: none; font-weight: 560; font-size: 13px;
+    border-bottom: 1px solid currentColor; padding-bottom: 1px; white-space: nowrap;
+  }
+  .book:hover { opacity: .8; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: flex-end; margin: 16px 0 4px; }
+  .hero { font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+  .hero .cur { font-size: 24px; vertical-align: 6px; font-weight: 500; }
+  .stat { font-size: 13px; color: var(--text-secondary); }
+  .stat b { display: block; color: var(--text-primary); font-size: 15px; font-weight: 580;
+            font-variant-numeric: tabular-nums; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 560; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .badge.hit { color: var(--good); }
+  .badge.above { color: var(--text-secondary); }
+  .cheapest { color: var(--text-secondary); font-size: 13px; margin: 2px 0 0; }
+
+  figure { margin: 18px 0 0; position: relative; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axisline { stroke: var(--axis); stroke-width: 1; }
+  .tick { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .series { fill: none; stroke: var(--series-1); stroke-width: 2;
+            stroke-linejoin: round; stroke-linecap: round; }
+  .area { fill: var(--series-1); opacity: .08; }
+  .targetline { stroke: var(--target); stroke-width: 1; stroke-dasharray: 4 4; }
+  .targetlabel { fill: var(--text-muted); font-size: 11px; }
+  .endlabel { fill: var(--text-primary); font-size: 12px; font-weight: 600;
+              font-variant-numeric: tabular-nums; }
+  .enddot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+  .crosshair { stroke: var(--crosshair); stroke-width: 1; stroke-dasharray: 3 3; }
+  .hoverdot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+  .hit { fill: transparent; cursor: crosshair; }
+
+  .tip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s;
+    background: var(--tip-bg); color: var(--tip-fg);
+    border-radius: 8px;
+    padding: 7px 10px; font-size: 12px; line-height: 1.4;
+    box-shadow: 0 6px 18px rgba(0,0,0,.28); white-space: nowrap; z-index: 5;
+  }
+  .tip b { font-variant-numeric: tabular-nums; }
+  .tip .t { color: var(--tip-muted); display: block; font-size: 11px; }
+
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 10px 5px 0; border-bottom: 1px solid var(--grid);
+           font-variant-numeric: tabular-nums; }
+  th { color: var(--text-muted); font-weight: 560; }
+  .tablewrap { overflow-x: auto; }
+
+  .empty { color: var(--text-secondary); font-size: 13px; padding: 6px 0; }
+  footer { color: var(--text-muted); font-size: 12px; margin-top: 28px; }
+  footer code { font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Amtrak Fare Watch</h1>
+    <p class="sub" id="sub">Loading…</p>
+  </header>
+  <div id="cards"></div>
+  <footer>
+    Prices are the cheapest qualifying fare found across every train on that date.
+    Edit <code>watchlist.json</code> in the repo to change what is watched.
+  </footer>
+</div>
+
+<script>
+const money = n => "$" + Number(n).toFixed(0);
+const fmtDate = iso => new Date(iso + "T12:00:00").toLocaleDateString(undefined,
+  { weekday: "short", month: "short", day: "numeric" });
+const fmtStamp = iso => new Date(iso).toLocaleString(undefined,
+  { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+function daysOut(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  return Math.round((d - today) / 86400000);
+}
+
+/* A single-series line chart with a crosshair + tooltip on hover.
+   One series, so no legend: the card heading names it. The last point is
+   direct-labeled rather than labeling every point. */
+function chart(series, target) {
+  const W = 800, H = 200, P = { t: 14, r: 52, b: 26, l: 44 };
+  if (series.length < 2) return { svg: "", points: [] };
+
+  const prices = series.map(d => d.p);
+  const candidates = target ? prices.concat([target]) : prices;
+  let lo = Math.min(...candidates), hi = Math.max(...candidates);
+  if (hi === lo) { hi = lo + 10; lo = Math.max(0, lo - 10); }
+  const pad = (hi - lo) * 0.12;
+  lo = Math.max(0, lo - pad); hi = hi + pad;
+
+  const times = series.map(d => new Date(d.t).getTime());
+  const t0 = times[0], t1 = times[times.length - 1];
+  const span = Math.max(1, t1 - t0);
+  const x = t => P.l + ((t - t0) / span) * (W - P.l - P.r);
+  const y = p => P.t + (1 - (p - lo) / (hi - lo)) * (H - P.t - P.b);
+
+  const pts = series.map((d, i) => ({ ...d, x: x(times[i]), y: y(d.p) }));
+  const line = pts.map((p, i) => (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ");
+  const base = H - P.b;
+  const area = line + ` L${pts[pts.length - 1].x.toFixed(1)} ${base} L${pts[0].x.toFixed(1)} ${base} Z`;
+
+  const ticks = [lo, (lo + hi) / 2, hi].map(v => ({ v, y: y(v) }));
+  const grid = ticks.map(t =>
+    `<line class="gridline" x1="${P.l}" x2="${W - P.r}" y1="${t.y.toFixed(1)}" y2="${t.y.toFixed(1)}"/>
+     <text class="tick" x="${P.l - 8}" y="${(t.y + 4).toFixed(1)}" text-anchor="end">${money(t.v)}</text>`
+  ).join("");
+
+  const xlabels = [0, pts.length - 1].map((i, k) =>
+    `<text class="tick" x="${pts[i].x.toFixed(1)}" y="${H - P.b + 16}"
+      text-anchor="${k === 0 ? "start" : "end"}">${fmtStamp(pts[i].t)}</text>`).join("");
+
+  const targetMark = target ? `
+    <line class="targetline" x1="${P.l}" x2="${W - P.r}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}"/>
+    <text class="targetlabel" x="${W - P.r + 6}" y="${(y(target) + 4).toFixed(1)}">target ${money(target)}</text>` : "";
+
+  const last = pts[pts.length - 1];
+  const end = `
+    <circle class="enddot" cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="4.5"/>
+    <text class="endlabel" x="${(last.x + 9).toFixed(1)}" y="${(last.y + 4).toFixed(1)}">${money(last.p)}</text>`;
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Lowest fare over time, ${money(Math.min(...prices))} to ${money(Math.max(...prices))}">
+    ${grid}
+    <line class="axisline" x1="${P.l}" x2="${W - P.r}" y1="${base}" y2="${base}"/>
+    ${xlabels}
+    ${targetMark}
+    <path class="area" d="${area}"/>
+    <path class="series" d="${line}"/>
+    ${end}
+    <g class="hoverlayer" style="opacity:0">
+      <line class="crosshair" y1="${P.t}" y2="${base}"/>
+      <circle class="hoverdot" r="5"/>
+    </g>
+    <rect class="hit" x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${base - P.t}"/>
+  </svg>`;
+
+  return { svg, points: pts, geom: { W, H, base, top: P.t } };
+}
+
+function wire(fig, points, geom) {
+  const svg = fig.querySelector("svg");
+  const hit = fig.querySelector(".hit");
+  const layer = fig.querySelector(".hoverlayer");
+  const tip = fig.querySelector(".tip");
+  if (!svg || !hit || !points.length) return;
+
+  const move = evt => {
+    const box = svg.getBoundingClientRect();
+    const px = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const vx = ((px - box.left) / box.width) * geom.W;
+    let best = points[0];
+    for (const p of points) if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p;
+
+    layer.style.opacity = 1;
+    layer.querySelector("line").setAttribute("x1", best.x);
+    layer.querySelector("line").setAttribute("x2", best.x);
+    layer.querySelector("circle").setAttribute("cx", best.x);
+    layer.querySelector("circle").setAttribute("cy", best.y);
+
+    const scale = box.width / geom.W;
+    tip.innerHTML = `<b>${money(best.p)}</b><span class="t">${fmtStamp(best.t)}</span>` +
+      (best.l ? `<span class="t">${best.l}</span>` : "");
+    tip.style.opacity = 1;
+    const tw = tip.offsetWidth;
+    let left = best.x * scale + 14;
+    if (left + tw > box.width) left = best.x * scale - tw - 14;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = Math.max(0, best.y * scale - 12) + "px";
+  };
+  const leave = () => { layer.style.opacity = 0; tip.style.opacity = 0; };
+
+  hit.addEventListener("mousemove", move);
+  hit.addEventListener("mouseleave", leave);
+  hit.addEventListener("touchstart", move, { passive: true });
+  hit.addEventListener("touchmove", move, { passive: true });
+  hit.addEventListener("touchend", leave);
+}
+
+function card(w) {
+  const el = document.createElement("section");
+  el.className = "card";
+  const out = daysOut(w.date);
+  const when = out < 0 ? "departed" : out === 0 ? "today" :
+               out === 1 ? "tomorrow" : `${out} days out`;
+
+  let body = "";
+  if (w.current == null) {
+    body = `<p class="empty">No fares recorded yet. The first check will fill this in.</p>`;
+  } else {
+    const hitTarget = w.target_price != null && w.current <= w.target_price;
+    const badge = w.target_price == null ? "" :
+      `<span class="badge ${hitTarget ? "hit" : "above"}">${
+        hitTarget ? "at or below target" : money(w.current - w.target_price) + " above target"}</span>`;
+
+    body = `
+      <div class="stats">
+        <div class="hero">${money(w.current)}<span class="cur"></span></div>
+        ${badge}
+        <div class="stat">Low seen<b>${w.low != null ? money(w.low) : "--"}</b></div>
+        <div class="stat">High seen<b>${w.high != null ? money(w.high) : "--"}</b></div>
+        <div class="stat">Checks<b>${w.checks}</b></div>
+      </div>
+      ${w.current_label ? `<p class="cheapest">${w.current_label}</p>` : ""}`;
+  }
+
+  const c = chart(w.series || [], w.target_price);
+  const figure = c.svg
+    ? `<figure>${c.svg}<div class="tip"></div></figure>`
+    : (w.current != null ? `<p class="empty">One data point so far. The chart appears after the next check.</p>` : "");
+
+  const rows = (w.series || []).slice().reverse().slice(0, 40).map(d =>
+    `<tr><td>${fmtStamp(d.t)}</td><td>${money(d.p)}</td><td>${d.l || ""}</td></tr>`).join("");
+  const table = rows ? `
+    <details>
+      <summary>Show the numbers</summary>
+      <div class="tablewrap">
+        <table><thead><tr><th>Checked</th><th>Lowest</th><th>Which train</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>
+    </details>` : "";
+
+  el.innerHTML = `
+    <div class="card-head">
+      <div>
+        <h2 class="route">${w.from} &rarr; ${w.to}</h2>
+        <p class="when">${fmtDate(w.date)} &middot; ${when}${
+          w.checked_at ? " &middot; checked " + fmtStamp(w.checked_at) : ""}</p>
+      </div>
+      <a class="book" href="${w.booking_url}" target="_blank" rel="noopener">Book on Amtrak</a>
+    </div>
+    ${body}${figure}${table}`;
+
+  if (c.svg) wire(el.querySelector("figure"), c.points, c.geom);
+  return el;
+}
+
+fetch("data.json", { cache: "no-store" })
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(data => {
+    document.getElementById("sub").textContent =
+      `${data.watches.length} trip${data.watches.length === 1 ? "" : "s"} watched · updated ${fmtStamp(data.generated_at)}`;
+    const host = document.getElementById("cards");
+    if (!data.watches.length) {
+      host.innerHTML = `<div class="card"><p class="empty">Nothing is being watched yet. Add trips to watchlist.json.</p></div>`;
+      return;
+    }
+    data.watches
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .forEach(w => host.appendChild(card(w)));
+  })
+  .catch(() => {
+    document.getElementById("sub").textContent =
+      "No data yet. It appears after the first successful run of the workflow.";
+  });
+</script>
+</body>
+</html>
