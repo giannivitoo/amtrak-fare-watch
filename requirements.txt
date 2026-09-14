@@ -1,10 +1,5 @@
-# Playwright is deliberately NOT listed here.
-#
-# The workflow runs inside mcr.microsoft.com/playwright/python, which ships
-# Playwright together with the exact Chromium build that version expects.
-# Installing playwright again from PyPI would pull a version whose expected
-# browser build is not in the image, and launching it would fail.
-#
-# To run this locally, outside that image:
-#   pip install playwright && playwright install chromium
+# Pinned together: the playwright package downloads a Chromium build matched
+# to its own version, so bumping one without the other breaks the launch.
+# The workflow runs `python -m playwright install --with-deps chromium`.
 requests>=2.31
+playwright==1.49.0
