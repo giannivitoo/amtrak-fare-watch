@@ -1,0 +1,60 @@
+name: Watch Amtrak fares
+
+on:
+  schedule:
+    # Every 15 minutes. Individual trips decide whether they are actually
+    # due, so most runs exit in a few seconds without touching Amtrak.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Check every trip now, ignoring the cadence"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fare-watch
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    # Ships with Chromium already installed, so the browser tier costs no
+    # install time.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.49.0-noble
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Poll fares
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          AMTRAK_FORCE_POLL: ${{ inputs.force && '1' || '0' }}
+        run: python -m watcher.main
+
+      - name: Commit price history
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "fare-watch"
+          git config user.email "fare-watch@users.noreply.github.com"
+          mkdir -p history
+          git add history docs/data.json
+          if git diff --staged --quiet; then
+            echo "No new observations."
+          else
+            git commit -m "fares: $(date -u '+%Y-%m-%d %H:%M UTC')"
+            # Another run may have landed while we were polling.
+            for i in 1 2 3; do
+              git pull --rebase --autostash && git push && exit 0
+              sleep 5
+            done
+            echo "Could not push after 3 attempts" >&2
+            exit 1
+          fi
